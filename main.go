@@ -3,10 +3,13 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/teniolafatunmbi/go-todo/internal/handlers"
+	"github.com/teniolafatunmbi/go-todo/internal/database"
 	"net/http"
 )
 
 func main() {
+	database.InitDB();
+	
 	r := gin.Default();
 
 	r.GET("/", func(c *gin.Context) {
