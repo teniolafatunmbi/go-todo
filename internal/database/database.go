@@ -10,21 +10,21 @@ import (
 )
 
 
-var db *sql.DB;
+var Db *sql.DB;
 
 func InitDB() {
 	var err error;
 
 	// modify the DB credentials to use .env 
-	connectionString := "postgres://postgres:postgres@localhost:5455/postgres?sslmode=disable"; 
-	db, err = sql.Open("postgres", connectionString);
+	connectionString := "postgres://postgres:postgres@localhost:5455/go_todo?sslmode=disable"; 
+	Db, err = sql.Open("postgres", connectionString);
 
 	if err != nil {
 		log.Fatal(err);
 		panic(err);
 	}
 
-	if err = db.Ping(); err != nil {
+	if err = Db.Ping(); err != nil {
 		log.Fatal("Failed to ping DB: ", err);
 		panic(err);
 	}

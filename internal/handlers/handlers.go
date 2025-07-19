@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"net/http"
-	"github.com/gin-gonic/gin"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/teniolafatunmbi/go-todo/internal/database"
 )
 
 type Todo struct {
@@ -34,6 +36,23 @@ func getTodoById(todoId int) *Todo {
 }
 
 func GetTodos(c *gin.Context) {
+	rows, err := database.Db.Query(`SELECT * FROM todos`);
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	todos := []Todo{};
+	for rows.Next() {
+		var todo Todo
+		if err := rows.Scan(&todo.ID, &todo.Title, &todo.IsCompleted); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		todos = append(todos, todo)
+	}
+
 	c.JSON(http.StatusOK, todos);
 }
 
@@ -47,10 +66,26 @@ func AddTodo(c *gin.Context) {
 	}
 
 	newTodo := Todo {
-		ID: len(todos) + 1,
 		Title: payload.Title,
 		IsCompleted: false,
 	}
+
+	result, err := database.Db.Exec(`INSERT INTO todos (title, is_completed) VALUES ($1, $2)`, newTodo.Title, newTodo.IsCompleted);
+	
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	id, err := result.LastInsertId()
+	
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	newTodo.ID = int(id)
+	
 	todos = append(todos, newTodo);
 	
 	response := map[string]any{
