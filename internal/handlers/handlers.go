@@ -1,17 +1,24 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/teniolafatunmbi/go-todo/internal/database"
 )
 
 type Todo struct {
-	ID int "json:id"
-	Title string "json:title"
-	IsCompleted bool "json:isCompleted"
+	ID int `json:"id"`
+	Title string `json:"title"`
+	IsCompleted bool `json:"is_completed"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at"`
 }
 
 type CreateTodo struct {
@@ -20,20 +27,38 @@ type CreateTodo struct {
 
 type UpdateTodoStruct struct {
 	Title       *string `json:"title,omitempty"`
-	IsCompleted *bool   `json:"isCompleted,omitempty"`
+	IsCompleted *bool   `json:"is_completed,omitempty"`
 }
 
-var todos = []Todo{}
+var ErrTodoNotFound = errors.New("todo not found");
 
+func getTodoByID(id int) (*Todo, error) {
+	const query = `
+		SELECT id, title, is_completed, created_at, updated_at
+		FROM todos
+		WHERE id = $1
+	`
 
-func getTodoById(todoId int) *Todo {
-	for i, todo := range todos {
-		if todo.ID == todoId {
-			return &todos[i]
+	todo := &Todo{}
+	err := database.Db.QueryRow(query, id).Scan(
+		&todo.ID,
+		&todo.Title,
+		&todo.IsCompleted,
+		&todo.CreatedAt,
+		&todo.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrTodoNotFound
 		}
+
+		return nil, fmt.Errorf("getTodoByID query failed: %w", err)
 	}
-	return nil
+
+	return todo, nil
 }
+
 
 func GetTodos(c *gin.Context) {
 	rows, err := database.Db.Query(`SELECT * FROM todos`);
@@ -46,10 +71,19 @@ func GetTodos(c *gin.Context) {
 	todos := []Todo{};
 	for rows.Next() {
 		var todo Todo
-		if err := rows.Scan(&todo.ID, &todo.Title, &todo.IsCompleted); err != nil {
+		var updatedAt sql.NullTime
+
+		if err := rows.Scan(&todo.ID, &todo.Title, &todo.IsCompleted, &todo.CreatedAt, &updatedAt); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
+		if updatedAt.Valid {
+			todo.UpdatedAt = &updatedAt.Time
+		} else {
+			todo.UpdatedAt = nil
+		}
+		
 		todos = append(todos, todo)
 	}
 
@@ -60,37 +94,26 @@ func GetTodos(c *gin.Context) {
 func AddTodo(c *gin.Context) {
 	var payload CreateTodo;
 
-	if err := c.ShouldBindJSON((&payload)); err != nil {
+	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	newTodo := Todo {
-		Title: payload.Title,
-		IsCompleted: false,
-	}
+	var newTodo Todo;
 
-	result, err := database.Db.Exec(`INSERT INTO todos (title, is_completed) VALUES ($1, $2)`, newTodo.Title, newTodo.IsCompleted);
+	err := database.Db.QueryRow(
+		`INSERT INTO todos (title, is_completed) VALUES ($1, $2) RETURNING id, title, is_completed, created_at, updated_at`, payload.Title, false).Scan(
+			&newTodo.ID, &newTodo.Title, &newTodo.IsCompleted, &newTodo.CreatedAt, &newTodo.UpdatedAt);
 	
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
-	id, err := result.LastInsertId()
-	
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	
-	newTodo.ID = int(id)
-	
-	todos = append(todos, newTodo);
+		
 	
 	response := map[string]any{
 		"message": "Todo added successfully",
-		"data":    newTodo,
+		"data": newTodo,
 	}
 	c.JSON(http.StatusOK, response);
 }
@@ -104,10 +127,10 @@ func UpdateTodo(c *gin.Context) {
 		return
 	}
 
-	todo := getTodoById(todoId);
+	_, getTodoErr := getTodoByID(todoId);
 
-	if todo == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Todo with ID " + strconv.Itoa(todoId) + " does not exist"});
+	if errors.Is(getTodoErr, ErrTodoNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Todo not found"})
 		return
 	}
 
@@ -118,18 +141,27 @@ func UpdateTodo(c *gin.Context) {
 
 	var updatedTodo Todo;
 
-	for index, todo := range todos {
-		if todo.ID == todoId {
-			if payload.Title != nil && *payload.Title != "" {
-				todos[index].Title = *payload.Title
-			}
+	setClauses := []string{}
 
-			if payload.IsCompleted != nil {
-				todos[index].IsCompleted = *payload.IsCompleted
-			}
+	if payload.IsCompleted != nil {
+		updateIsCompletedStmt := fmt.Sprintf("is_completed = %t", *payload.IsCompleted);
+		setClauses = append(setClauses, updateIsCompletedStmt);
+	}
 
-			updatedTodo = todos[index];
-		}
+	if payload.Title != nil {
+		updateTitleStmt := fmt.Sprintf("title = '%s'", *payload.Title);
+		setClauses = append(setClauses, updateTitleStmt);
+	}
+
+	updateTodoStmt := fmt.Sprintf("UPDATE todos SET %s WHERE id = $1 RETURNING id, title, is_completed, created_at, updated_at", strings.Join(setClauses, ", "));
+
+	fmt.Println(updateTodoStmt);
+
+	updateTodoErr := database.Db.QueryRow(updateTodoStmt, todoId).Scan(&updatedTodo.ID, &updatedTodo.Title, &updatedTodo.IsCompleted, &updatedTodo.CreatedAt, &updatedTodo.UpdatedAt);
+
+	if updateTodoErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": updateTodoErr.Error()});
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Todo updated successfully", "data": updatedTodo})
@@ -143,21 +175,19 @@ func DeleteTodo(c *gin.Context) {
 		return;
 	}
 
-	todo := getTodoById(todoId);
+	_, getTodoErr := getTodoByID(todoId);
 
-	if todo == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Todo with ID " + strconv.Itoa(todoId) + " does not exist"});
+	if errors.Is(getTodoErr, ErrTodoNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Todo not found"})
 		return
 	}
 
-	newTodos := []Todo{}
-	for _, todo := range todos {
-		if todo.ID != todoId {
-			newTodos = append(newTodos, todo)
-		}
-	}
+	_, deleteTodoErr := database.Db.Exec("DELETE FROM todos WHERE id = $1", todoId);
 
-	todos = newTodos;
+	if deleteTodoErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": deleteTodoErr.Error()});
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Todo with ID " + strconv.Itoa(todoId) + " deleted successfully"})
 }
