@@ -2,8 +2,6 @@ services:
   api:
     container_name: go_todo_api
     build: .
-    volumes:
-      - ./:/app
     ports:
       - 4000:8080
     depends_on:

@@ -15,7 +15,7 @@ func InitDB() {
 	var err error;
 
 	// modify the DB credentials to use .env 
-	connectionString := "postgres://postgres:postgres@localhost:5455/go_todo?sslmode=disable"; 
+	connectionString := "postgres://postgres:postgres@database:5432/go_todo?sslmode=disable"; 
 	Db, err = sql.Open("postgres", connectionString);
 
 	if err != nil {
