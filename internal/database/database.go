@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	_ "github.com/lib/pq"
+	"os"
 
+	_ "github.com/lib/pq"
 )
 
 
@@ -15,7 +16,7 @@ func InitDB() {
 	var err error;
 
 	// modify the DB credentials to use .env 
-	connectionString := "postgres://postgres:postgres@database:5432/go_todo?sslmode=disable"; 
+	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME")); 
 	Db, err = sql.Open("postgres", connectionString);
 
 	if err != nil {
