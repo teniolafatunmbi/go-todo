@@ -153,7 +153,7 @@ func UpdateTodo(c *gin.Context) {
 		setClauses = append(setClauses, updateTitleStmt);
 	}
 
-	updateTodoStmt := fmt.Sprintf("UPDATE todos SET %s WHERE id = $1 RETURNING id, title, is_completed, created_at, updated_at", strings.Join(setClauses, ", "));
+	updateTodoStmt := fmt.Sprintf("UPDATE todos SET %s, updated_at = NOW() WHERE id = $1 RETURNING id, title, is_completed, created_at, updated_at", strings.Join(setClauses, ", "));
 
 	fmt.Println(updateTodoStmt);
 
