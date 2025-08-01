@@ -1,20 +1,43 @@
-## BAREBONES TODO API WITH PostgreSQL
+## BAREBONES TODO API WITH PostgreSQL + Containerization
 
 ### Requirements
-- Go (v 1.23.2+)
 - Docker
 
+## Setup
+- Run `cp .env.example .env`
 
-## DB migration.
-- Run `docker compose up -d`
+- Run `make setup`
 
-- Run DB migration: 
+- Ping `localhost:4000` to confirm that API is up. You should see 
 ```sh
-migrate -source file://./internal/database/migrations -database "postgresql://postgres:postgres@localhost:5455/go_todo?sslmode=disable" up 2
+   { "message": "Hello World! Welcome to Go Todo" }
 ```
-- Run `go run main.go`
 
-- Ping `localhost:4000` to confirm that API is up.
+## Testing Endpoints
+- Create todo
 
-## TODO 
-- Dockerise the API
+```sh
+
+curl -X POST localhost:4000/todos -H "Content-Type: application/json" -d '{"title": "Create test todo"}'
+
+```
+
+- Get todos
+
+```sh
+
+curl localhost:4000/todos
+```
+
+- Update todo. You can play around with updating only the `title` or `is_completed` field.
+```sh
+
+ curl -X PUT localhost:4000/todos/:id -H "Content-Type: application/json" -d '{"title": "Create test todo title update", "is_completed": true}'
+```
+
+- Delete todo
+
+```sh
+
+curl -X DELETE localhost:4000/todos/:id 
+```

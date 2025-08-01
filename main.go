@@ -14,7 +14,7 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "Hello World!",
+			"message": "Hello World! Welcome to Go Todo",
 		})
 	})
 
@@ -23,5 +23,5 @@ func main() {
 	r.PUT("/todos/:id", handlers.UpdateTodo);
 	r.DELETE("/todos/:id", handlers.DeleteTodo);
 
-	r.Run(":4000")
+	r.Run(":8080")
 }
