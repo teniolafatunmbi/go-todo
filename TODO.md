@@ -7,7 +7,12 @@ This will be in two stages
 ## Deployment
 - CD workflow that pushes an image to DockerHub before running `helm install`
 
-### Steps
-- Build the Go app
-- Push the build to DockerHub
-- Run `helm install` to deploy the application to k8s (on AWS or KinD)
+### Todos
+- Build the Go app ✅
+- Push the build to DockerHub✅
+- Configure k8s deployment with Helm (on KinD):
+  - Setup DB migration✅
+  - Ensure that DB migration runs before main app deployment (use wait-for)
+  - Setup main app deployment with DB✅
+- Configure k8s deployment with Helm (on AWS)
+- Write documentation
