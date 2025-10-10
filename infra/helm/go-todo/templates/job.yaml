@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: go-todo-pre-deploy
+spec:
+  template:
+    spec:
+      containers:
+        - name: pre-deploy
+          image: docker.io/teniolafatunmbi/go-todo
+          command:
+            [
+              "sh",
+              "-c",
+              'migrate -source file:///app/internal/database/migrations -database "postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable" up',
+            ]
+          envFrom:
+            - configMapRef:
+                name: go-todo-config
+      restartPolicy: Never

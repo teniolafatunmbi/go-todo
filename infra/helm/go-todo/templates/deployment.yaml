@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-todo-deployment
+  namespace: go-todo
+  labels:
+    app: go-todo
+spec:
+  selector:
+    matchLabels:
+      app: go-todo
+  template:
+    metadata:
+      name: go-todo-app
+      labels:
+        app: go-todo
+    spec:
+      containers:
+        - name: go-todo
+          image: docker.io/teniolafatunmbi/go-todo
+          ports:
+            - containerPort: 9000
+          envFrom:
+            - configMapRef:
+                name: go-todo-config
+          readinessProbe:
+            httpGet:
+              path: /todos
+              port: 9000
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            initialDelaySeconds: 3
+            periodSeconds: 3

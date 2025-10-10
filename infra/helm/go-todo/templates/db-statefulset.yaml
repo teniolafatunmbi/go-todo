@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: go-todo-db-statefulset
+  namespace: go-todo
+  labels:
+    app: go-todo
+    tier: database
+spec:
+  selector:
+    matchLabels:
+      app: go-todo
+      tier: database
+  serviceName: go-todo-db
+  replicas: 1
+  template:
+    metadata:
+      name: go-todo-db
+      labels:
+        app: go-todo
+        tier: database
+    spec:
+      containers:
+        - name: go-todo-postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: go-todo-config
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: go-todo-config
+                  key: DB_PASS
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: go-todo-config
+                  key: DB_NAME
+
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+        storageClassName: standard-retain

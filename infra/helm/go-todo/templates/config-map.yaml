@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: go-todo-config
+  namespace: go-todo
+data:
+  DB_HOST: "go-todo-db-svc.go-todo.svc.cluster.local"
+  DB_USER: "gotodo"
+  DB_PASS: "gotodo"
+  DB_PORT: "5432"
+  DB_NAME: "go-todo"
+  APP_PORT: "9000"

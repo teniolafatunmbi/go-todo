@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-todo-svc
+  namespace: go-todo
+  labels:
+    app: go-todo
+spec:
+  # change to cluster IP after
+  type: NodePort
+  ports:
+    - port: 8000
+      targetPort: 5000
+
+  selector:
+    app: go-todo

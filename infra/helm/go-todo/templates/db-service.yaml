@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-todo-db-svc
+  namespace: go-todo
+  labels:
+    app: go-todo
+    tier: database
+spec:
+  # change to cluster IP after
+  type: NodePort
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+  selector:
+    app: go-todo
+    tier: database
