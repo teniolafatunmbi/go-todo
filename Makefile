@@ -10,8 +10,12 @@ setup:
 down:
 	docker compose down --remove-orphans
 
+push:
+	docker build . -t teniolafatunmbi/go-todo
+	docker login -u teniolafatunmbi
+	docker push teniolafatunmbi/go-todo
+
 help:
 	@echo "setup - setup the environment"
 	@echo "down - Tear down the dev environment"
 	@echo "migrate - run database migrations"
-
