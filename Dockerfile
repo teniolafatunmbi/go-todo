@@ -1,4 +1,4 @@
-FROM golang:1.23.2-alpine AS builder
+FROM golang:1.23.2-alpine
 
 RUN apk add --no-cache git curl
 
@@ -19,6 +19,3 @@ RUN curl -L https://github.com/golang-migrate/migrate/releases/download/${MIGRAT
 RUN go build -ldflags '-w -s' -a -o main .
 
 CMD ["/app/main"]
-
-EXPOSE 8080
-
