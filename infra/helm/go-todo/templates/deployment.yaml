@@ -5,16 +5,27 @@ metadata:
   namespace: go-todo
   labels:
     app: go-todo
+    tier: application
 spec:
   selector:
     matchLabels:
       app: go-todo
+      tier: application
   template:
     metadata:
       name: go-todo-app
       labels:
         app: go-todo
+        tier: application
     spec:
+      serviceAccountName: go-todo-sa
+      initContainers:
+        - name: wait-for-go-todo-pre-deploy
+          image: ghcr.io/groundnuty/k8s-wait-for:v2.0
+          imagePullPolicy: Always
+          args:
+            - "job"
+            - "go-todo-pre-deploy"
       containers:
         - name: go-todo
           image: docker.io/teniolafatunmbi/go-todo

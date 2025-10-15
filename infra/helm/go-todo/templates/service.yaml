@@ -5,12 +5,12 @@ metadata:
   namespace: go-todo
   labels:
     app: go-todo
+    tier: application
 spec:
-  # change to cluster IP after
   type: NodePort
-  ports:
-    - port: 8000
-      targetPort: 5000
-
   selector:
     app: go-todo
+    tier: application
+  ports:
+    - port: 8000
+      targetPort: 9000

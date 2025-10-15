@@ -2,6 +2,9 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: go-todo-pre-deploy
+  labels:
+    app: go-todo
+    tier: job
 spec:
   template:
     spec:

@@ -12,7 +12,7 @@ This will be in two stages
 - Push the build to DockerHub✅
 - Configure k8s deployment with Helm (on KinD):
   - Setup DB migration✅
-  - Ensure that DB migration runs before main app deployment (use wait-for)
+  - Ensure that DB migration runs before main app deployment (use wait-for, setup RBAC for wait-for-go-todo-pre-deploy)
   - Setup main app deployment with DB✅
 - Configure k8s deployment with Helm (on AWS)
 - Write documentation
