@@ -1,14 +1,20 @@
-## BAREBONES TODO API WITH PostgreSQL + Containerization
+## TODO API Deployment on Kubernetes
 
 ### Requirements
-- Docker
+- Docker (v28.3.3 or newer)
+- Kubernetes (v1.34 or newer)
+- Helm (v3.18.4 or newer)
 
 ## Setup
-- Run `cp .env.example .env`
+- Pull this branch
 
-- Run `make setup`
+- Run `make deploy`
 
-- Ping `localhost:4000` to confirm that API is up. You should see 
+- Run `kubectl get nodes -o wide` and copy the `INTERNAL-IP` of the node the `go-todo` namespace is on.
+
+- Run `kubectl get svc` and copy the external port number for the `go-todo-svc` service.
+
+- Run `curl <NODE-INTERNAL-IP>:<go-todo-svc-external-port>` to confirm that API is up. You should see
 ```sh
    { "message": "Hello World! Welcome to Go Todo" }
 ```
@@ -18,7 +24,7 @@
 
 ```sh
 
-curl -X POST localhost:4000/todos -H "Content-Type: application/json" -d '{"title": "Create test todo"}'
+curl -X POST <NODE-INTERNAL-IP>:<go-todo-svc-external-port>/todos -H "Content-Type: application/json" -d '{"title": "Create test todo"}'
 
 ```
 
@@ -26,18 +32,21 @@ curl -X POST localhost:4000/todos -H "Content-Type: application/json" -d '{"titl
 
 ```sh
 
-curl localhost:4000/todos
+curl <NODE-INTERNAL-IP>:<go-todo-svc-external-port>/todos
 ```
 
 - Update todo. You can play around with updating only the `title` or `is_completed` field.
 ```sh
 
- curl -X PUT localhost:4000/todos/:id -H "Content-Type: application/json" -d '{"title": "Create test todo title update", "is_completed": true}'
+ curl -X PUT <NODE-INTERNAL-IP>:<go-todo-svc-external-port>/todos/:id -H "Content-Type: application/json" -d '{"title": "Create test todo title update", "is_completed": true}'
 ```
 
 - Delete todo
 
 ```sh
 
-curl -X DELETE localhost:4000/todos/:id 
+curl -X DELETE <NODE-INTERNAL-IP>:<go-todo-svc-external-port>:4000/todos/:id
 ```
+
+# Notes
+This Kubernetes deployment with Helm on KinD doesn't add an Ingress to the deployment. An Ingress will be added to the AWS deployment.
